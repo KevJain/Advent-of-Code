@@ -2,9 +2,14 @@ import sys
 
 import matplotlib.pyplot as plt
 
+all_points = []
+with open("input.txt", "r") as file:
+    lines = file.read().split()
+    all_points = [tuple(map(int, line.split(","))) for line in lines]
+    print(f"Read {len(lines)} lines")
 raw_input = sys.stdin.read().split()
 coords = [tuple(map(int, line.split(","))) for line in raw_input]
-max_rect = 0
+
 
 """ Part 1
 for i in range(len(coords)):
@@ -20,11 +25,10 @@ for i in range(len(coords)):
 # do we need to compute all four directions. Possible improvement: only calculate
 # extra information for concave corners when necessary
 
-""" Visualization
-x, y = zip(*coords)
-plt.plot(x, y)
-plt.show()
+# Visualization
 
+
+"""
 Conclusion: The figure is divided into upper and lower hemispheres, we can perform
 individual calculations on each hemisphere.
 Furthermore, if we choose both corners to be on the circumference on the circle, the resulting
@@ -44,6 +48,9 @@ to stay within the circle. Create a list of horizontal line segments, and we can
 vertical line segment with these horiztonal segments. Any intersection besides interior endpoint = invalid
 """
 
+low_point = (94737, 48494)
+high_point = (94737, 50273)
+
 
 def rectsize(p1, p2):
     return (abs(p1[0] - p2[0]) + 1) * (abs(p1[1] - p2[1]) + 1)
@@ -52,6 +59,8 @@ def rectsize(p1, p2):
 def intersect(l1, l2):
     if l1[0] == l2[0] or l1[0] == l2[1]:
         return False  # point on segment, ignore
+    if l1[0][0] == l1[0][0]:  # intersects with interior corner, OK
+        return False
     if l2[0][0] > l2[1][0]:  # rightward edge, wrong orientation
         if l2[1][0] <= l1[0][0] <= l2[0][0] and l1[1][1] <= l2[0][1] <= l1[0][1]:
             return True
@@ -62,25 +71,27 @@ def intersect(l1, l2):
     return False
 
 
-horizontal_segs = []  # (x1, y1, x2, y2)
-for i in range(1, len(coords)):
-    if coords[i - 1][1] == coords[i][1]:
-        horizontal_segs.append((coords[i - 1], coords[i]))  # first point is 'interior'
+def max_rectangle(corner):
+    max_rect = 0
+    horizontal_segs = []  # (x1, y1, x2, y2)
+    for i in range(1, len(coords)):
+        if coords[i - 1][1] == coords[i][1]:
+            horizontal_segs.append(
+                (coords[i - 1], coords[i])
+            )  # first point is 'interior'
 
-for point in coords:
-    altitude = (point, (point[0], 50273))
-    valid = True
-    for seg in horizontal_segs:
-        if intersect(altitude, seg):
-            valid = False
-            break
-    if valid:
-        print(f"Candidate found: {point}")
-        max_rect = max(max_rect, rectsize(point, (94737, 50273)))
+    for point in coords:
+        altitude = (point, (point[0], corner[1]))
+        valid = True
+        for seg in horizontal_segs:
+            if intersect(altitude, seg):
+                valid = False
+                break
+        if valid:
+            print(f"Candidate found: {point}")
+            max_rect = max(max_rect, rectsize(point, corner))
+    return max_rect
 
-# TODO: Repeat analysis with lower cands, answer should be there.
-# Too low: 1527936636
-# Too high: 1806816974
 
 # upper_pts = [point for point in coords if point[1] > 50273]
 # upper_cands =
@@ -90,4 +101,7 @@ available = [] # corresponds with dirs above
 for i in range(len(coords)):
 """
 
-print(max_rect)
+print(max_rectangle(high_point))
+x, y = zip(*all_points)
+plt.plot(x, y)
+plt.show()
